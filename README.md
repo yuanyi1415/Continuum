@@ -64,25 +64,17 @@ Continuum 自身**不要求 Docker**。Docker 只可能作为未来/外部的执
 
 ## 安装
 
-### 方式 A：克隆后使用安装脚本（推荐）
-
-npm 在 macOS / npm 11 的“全局安装 Git dependency”路径存在已知问题，因此 Continuum **不推荐**直接执行 `npm install -g git+...`。
+### 方式 A：直接从 GitHub 全局安装（推荐）
 
 ```bash
-git clone --depth 1 https://github.com/yuanyi1415/Continuum.git
-cd Continuum
-bash install.sh
+npm install -g "github:yuanyi1415/Continuum"
 ```
 
-当前仓库为 private 时，可改用 SSH：
+也可以固定到某个 commit：
 
 ```bash
-git clone --depth 1 git@github.com:yuanyi1415/Continuum.git
-cd Continuum
-bash install.sh
+npm install -g "git+https://github.com/yuanyi1415/Continuum.git#<commit>"
 ```
-
-安装脚本会执行：仓库源码 → `npm pack` → 本地 tgz 全局安装，从而绕开 npm 的 Git dependency preparation。
 
 验证：
 
@@ -93,18 +85,24 @@ continuum --help
 
 > 当前仓库如果保持 private，执行安装的用户/Agent 必须已经具备该 GitHub 仓库的访问权限。
 >
-> 正式安装使用仓库内已提交的 `dist/`，不会要求用户机器安装 TypeScript 或现场编译。
+> Continuum 已提交预编译 `dist/`。为兼容 npm 的 Git dependency 安装规则，发布包不再使用名为 `build` / `prepare` 的生命周期脚本，因此 GitHub 安装不会触发本地 TypeScript 构建。
 
-### 方式 B：克隆源码安装
+### 方式 B：克隆源码开发
 
 ```bash
 git clone https://github.com/yuanyi1415/Continuum.git
 cd Continuum
 npm install
-npm run build
+npm run compile
 npm link
 
 continuum --version
+```
+
+如果你的 npm / Git 环境无法直接安装 Git dependency，仓库仍保留 `install.sh` 作为 fallback：
+
+```bash
+bash install.sh
 ```
 
 更多细节见：[安装与快速开始](docs/安装与快速开始.md)。
@@ -241,7 +239,7 @@ continuum --help
 在当前 Git 项目安装并启用 Continuum：
 1. 先检查 Git 和 Node.js，Node 必须是 24 LTS；不满足就停止并告诉我，不要擅自升级系统环境。
 2. 如果 continuum 命令不存在，执行：
-   npm install -g git+https://github.com/yuanyi1415/Continuum.git
+   npm install -g "github:yuanyi1415/Continuum"
 3. 如果当前仓库尚未存在 .continuum/project.yaml，执行 continuum init；已经初始化则不要重复 init。
 4. 执行 continuum host doctor。
 5. 如果检测到 Codex，执行 continuum host install codex；如果检测到 OMP，执行 continuum host install omp。
@@ -308,7 +306,7 @@ continuum archive verify <archive-path>
 ```bash
 npm install
 npm test
-npm run build
+npm run compile
 ```
 
 当前 MVP 回归基线：**P01–P10，68 tests**。
