@@ -1,6 +1,6 @@
 {
   "name": "@continuum-ai/continuum",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Local-first project lifecycle control plane for long-running AI coding projects",
   "type": "module",
   "bin": {
@@ -24,7 +24,6 @@
     "test:p08": "npm run build:test && node --test dist-test/test/p08/*.test.js",
     "test:p09": "npm run build:test && node --test dist-test/test/p09/*.test.js",
     "test:p10": "npm run build:test && node --test dist-test/test/p10/*.test.js",
-    "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run build"
   },
   "dependencies": {

@@ -1,0 +1,4 @@
+export class SystemClock {
+    nowIso() { return new Date().toISOString(); }
+}
+//# sourceMappingURL=system-clock.js.map

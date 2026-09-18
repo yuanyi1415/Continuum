@@ -78,6 +78,8 @@ continuum --help
 ```
 
 > 当前仓库如果保持 private，执行安装的用户/Agent 必须已经具备该 GitHub 仓库的访问权限。
+>
+> GitHub 安装使用仓库内已提交的 `dist/`，不会要求用户机器安装 TypeScript 或现场编译。
 
 ### 方式 B：克隆源码安装
 

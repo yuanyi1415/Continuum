@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.1 — 2026-09-18
+
+### Fixed
+
+- GitHub global install no longer compiles TypeScript on the user machine.
+- Prebuilt `dist/` is committed and shipped with the repository.
+- Removed the install-time `prepare` build hook that caused `tsc: command not found`.
+
+
 ## 1.0.0 — 2026-09-18
 
 Continuum MVP v1.0 baseline.

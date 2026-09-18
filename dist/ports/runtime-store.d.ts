@@ -1,0 +1,37 @@
+import type { WorkReconcileCandidate } from "../domain/reconcile/work-reconcile.js";
+import type { InteractionRequest, InteractionResult } from "../domain/interaction/interaction.js";
+import type { SessionBinding, SessionSuppression, WorkBinding } from "../domain/work/work-binding.js";
+import type { RuntimeMigrationResult, RuntimeRecoveryResult } from "./maintenance.js";
+export interface RuntimeHealth {
+    available: boolean;
+    state?: "missing" | "healthy" | "needs-migration" | "too-new" | "corrupt" | "unavailable";
+    schemaVersion?: number;
+    driver?: string;
+    error?: string;
+}
+export interface RuntimeStorePort {
+    initialize(): Promise<void>;
+    health(): Promise<RuntimeHealth>;
+    migrate(): Promise<RuntimeMigrationResult>;
+    recover(): Promise<RuntimeRecoveryResult>;
+    getWorktreeBinding(worktreeId: string): Promise<WorkBinding | null>;
+    listWorktreeBindings(): Promise<WorkBinding[]>;
+    bindWork(binding: WorkBinding): Promise<WorkBinding>;
+    clearWorktreeBinding(worktreeId: string): Promise<void>;
+    clearSessionBindingsForWorktree(worktreeId: string): Promise<void>;
+    getSessionBinding(sessionId: string, host: string): Promise<SessionBinding | null>;
+    bindSession(binding: SessionBinding): Promise<void>;
+    suppressSession(suppression: SessionSuppression): Promise<void>;
+    isSessionSuppressed(sessionId: string, host: string): Promise<boolean>;
+    getSessionSuppression(sessionId: string, host: string): Promise<SessionSuppression | null>;
+    loadPendingReconcile(workId: string): Promise<WorkReconcileCandidate | null>;
+    listPendingReconciles(): Promise<WorkReconcileCandidate[]>;
+    savePendingReconcile(candidate: WorkReconcileCandidate): Promise<void>;
+    deletePendingReconcile(workId: string): Promise<void>;
+    savePendingInteraction(request: InteractionRequest): Promise<void>;
+    loadPendingInteraction(interactionId: string): Promise<InteractionRequest | null>;
+    listPendingInteractions(): Promise<InteractionRequest[]>;
+    resolveInteraction(result: InteractionResult): Promise<void>;
+    hasIdempotencyKey(key: string): Promise<boolean>;
+    saveIdempotencyKey(key: string, createdAt: string): Promise<void>;
+}
