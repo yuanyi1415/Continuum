@@ -33,7 +33,7 @@ const relationRouting = new Set<RelationRouting>(["required","optional","histori
 const changeStatuses = new Set<ChangeStatus>(["active","closed","superseded"]);
 
 function version(): string {
-  return "Continuum 1.0.1";
+  return "Continuum 1.0.2";
 }
 
 function help(): string {
