@@ -25,10 +25,7 @@ node --version
 git --version
 
 # 2. 安装 CLI（仅当 command -v continuum 失败）
-TMP_DIR="$(mktemp -d)"
-git clone --depth 1 git@github.com:yuanyi1415/Continuum.git "$TMP_DIR/Continuum"
-bash "$TMP_DIR/Continuum/install.sh"
-rm -rf "$TMP_DIR"
+npm install -g "github:yuanyi1415/Continuum"
 
 # 3. 验证
 continuum --version
@@ -59,9 +56,7 @@ Node != 24.x
 → STOP，报告环境不满足
 
 continuum 不存在
-→ clone 到临时目录
-→ bash install.sh
-→ 删除临时目录
+→ npm install -g "github:yuanyi1415/Continuum"
 
 .continuum/project.yaml 不存在
 → continuum init
