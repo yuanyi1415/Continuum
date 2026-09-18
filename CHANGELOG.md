@@ -1,6 +1,11 @@
 # Changelog
 
-## 1.0.1 — 2026-09-18
+## 1.0.1
+
+### Installation
+
+- Added a Git dependency-safe installer (`install.sh`).
+- Recommended installation now uses `git clone → npm pack → npm install -g local.tgz` instead of `npm install -g git+...`, avoiding an upstream npm global Git dependency preparation failure. — 2026-09-18
 
 ### Fixed
 
