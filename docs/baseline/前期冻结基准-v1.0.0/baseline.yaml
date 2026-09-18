@@ -1,0 +1,109 @@
+version: "1.0.0"
+frozen_at: "2026-09-17"
+project:
+  name: "Continuum"
+  description: "AI Coding Project Lifecycle Control Plane"
+  mission: "Keep the project coherent as it changes."
+  scope: "long-running AI coding projects"
+
+positioning:
+  project_scoped: true
+  opt_in: true
+  replaces_matt_pocock_skills: false
+  replaces_issue_tracker: false
+  replaces_git: false
+  global_agent_runtime: false
+
+core_model:
+  - Project
+  - Snapshot
+  - Change
+  - ArtifactRef
+  - Relation
+  - Reconcile
+  - WorkBinding
+  - InteractionRequest
+
+authorities:
+  domain_context: "CONTEXT.md"
+  architecture_decision: "ADR"
+  change_target: "Spec"
+  work_item: "Ticket / Issue Tracker"
+  code: "Git"
+  tests: "Test Runner / CI"
+  current_project_state: "Continuum Snapshot"
+  cross_artifact_relation: "Continuum Relation"
+  implementation_convergence: "Reconcile"
+
+lifecycle:
+  correctness: "state-derived"
+  events: "wake-up-signals"
+  work_continuity_scope: "worktree"
+  session_behavior: "temporary interaction / suppression"
+  ticket_reconcile: "ephemeral"
+  change_reconcile: "durable"
+  ticket_baseline: "work_start_revision"
+  project_baseline: "snapshot repository revision"
+
+activation:
+  no_continuum_project: "silent"
+  project_aware_unbound: "silent"
+  managed_work: "lifecycle enabled"
+  existing_intent_binding: true
+  extra_manage_command_required: false
+
+interaction:
+  types:
+    - STATUS
+    - NOTICE
+    - DECISION
+    - BLOCK
+  principle: "silent by default, interrupt on significance"
+  codex:
+    status: "silent"
+    decision_primary: "MCP elicitation"
+    decision_fallback: "Hook gate"
+    block: "Hook block"
+  omp:
+    aware: "silent"
+    managed_status: "single ambient widget"
+    simple_decision: "select"
+    heavy_decision: "overlay"
+    block: "blocking overlay"
+
+storage:
+  durable_root: ".continuum/"
+  ephemeral_root: ".continuum-local/"
+  repo_native: true
+  format: "TBD in formal architecture"
+
+verified:
+  minimal_project_state: true
+  artifact_authority: true
+  matt_black_box_integration: true
+  reconcile: true
+  typed_relation_context_routing: true
+  repo_portability: true
+  lifecycle_trigger: true
+  lost_hook_recovery: true
+  cross_agent_continuity: true
+  host_interaction_ux: true
+  real_host_versions:
+    codex: "0.154.0"
+    omp: "18.2.1"
+
+deferred:
+  - Personal Knowledge Extraction
+  - Web Dashboard
+  - Knowledge Graph
+  - Vector RAG
+  - Multi-agent Scheduler
+  - Beads integration
+  - Serena integration
+
+next_phase:
+  - Formal Architecture
+  - ADR
+  - Spec
+  - Tickets
+  - Build

@@ -1,0 +1,68 @@
+{
+  "name": "@continuum-ai/continuum",
+  "version": "1.0.0",
+  "description": "Local-first project lifecycle control plane for long-running AI coding projects",
+  "type": "module",
+  "bin": {
+    "continuum": "./dist/cli/index.js"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:test": "tsc -p tsconfig.test.json",
+    "test": "npm run build:test && node --test dist-test/test/p01/*.test.js dist-test/test/p02/*.test.js dist-test/test/p03/*.test.js dist-test/test/p04/*.test.js dist-test/test/p05/*.test.js dist-test/test/p06/*.test.js dist-test/test/p07/*.test.js dist-test/test/p08/*.test.js dist-test/test/p09/*.test.js dist-test/test/p10/*.test.js",
+    "test:p01": "npm run build:test && node --test dist-test/test/p01/*.test.js",
+    "check": "npm run test",
+    "test:p02": "npm run build:test && node --test dist-test/test/p02/*.test.js",
+    "test:p03": "npm run build:test && node --test dist-test/test/p03/*.test.js",
+    "test:p04": "npm run build:test && node --test dist-test/test/p04/*.test.js",
+    "test:p05": "npm run build:test && node --test dist-test/test/p05/*.test.js",
+    "test:p06": "npm run build:test && node --test dist-test/test/p06/*.test.js",
+    "test:p07": "npm run build:test && node --test dist-test/test/p07/*.test.js",
+    "test:p08": "npm run build:test && node --test dist-test/test/p08/*.test.js",
+    "test:p09": "npm run build:test && node --test dist-test/test/p09/*.test.js",
+    "test:p10": "npm run build:test && node --test dist-test/test/p10/*.test.js",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run build"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "yaml": "^2.9.1",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "@modelcontextprotocol/server": "2.0.0",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2"
+  },
+  "license": "MIT",
+  "files": [
+    "dist/",
+    "runtime-assets/",
+    "schemas/",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yuanyi1415/Continuum.git"
+  },
+  "homepage": "https://github.com/yuanyi1415/Continuum#readme",
+  "bugs": {
+    "url": "https://github.com/yuanyi1415/Continuum/issues"
+  },
+  "keywords": [
+    "ai-coding",
+    "coding-agent",
+    "codex",
+    "omp",
+    "project-lifecycle",
+    "local-first",
+    "agent-harness"
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ContinuumRelation",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "relation_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "from": {
+      "type": "string",
+      "minLength": 1
+    },
+    "to": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "enum": [
+        "belongs_to",
+        "blocked_by",
+        "governed_by",
+        "domain_context",
+        "evidence",
+        "supersedes"
+      ]
+    },
+    "routing": {
+      "enum": [
+        "required",
+        "optional",
+        "historical"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "schema_version",
+    "relation_id",
+    "from",
+    "to",
+    "type",
+    "routing",
+    "created_at"
+  ]
+}

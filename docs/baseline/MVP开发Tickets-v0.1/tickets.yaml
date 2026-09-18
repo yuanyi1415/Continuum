@@ -1,0 +1,54 @@
+version: '0.1'
+upstream_spec: Continuum-MVP技术规格-v1.0.0
+strategy: vertical-slice-tracer-bullet
+tickets:
+- id: P01
+  name: 项目初始化与可移植状态闭环
+  depends_on: []
+- id: P02
+  name: Change 与 Artifact Graph 闭环
+  depends_on:
+  - P01
+- id: P03
+  name: Work Binding 与连续性闭环
+  depends_on:
+  - P02
+- id: P04
+  name: Matt 接入与最小 Context Routing
+  depends_on:
+  - P03
+- id: P05
+  name: Work Reconcile 正确性闭环
+  depends_on:
+  - P03
+- id: P06
+  name: Change Reconcile 与 Snapshot 推进
+  depends_on:
+  - P04
+  - P05
+- id: P07
+  name: Codex 原生适配闭环
+  depends_on:
+  - P05
+  - P06
+- id: P08
+  name: OMP 原生适配闭环
+  depends_on:
+  - P05
+  - P06
+- id: P09
+  name: Doctor 迁移与故障恢复
+  depends_on:
+  - P01
+  - P05
+  - P06
+- id: P10
+  name: Project Archive 闭环
+  depends_on:
+  - P06
+  - P09
+parallel_groups:
+- - P04
+  - P05
+- - P07
+  - P08

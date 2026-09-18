@@ -1,0 +1,56 @@
+version: 1.0.0
+status: final
+upstream:
+- Continuum-前期冻结基准-v1.0.0
+- Continuum-正式架构基线-v0.1
+mvp:
+  deployment: local-first modular monolith
+  daemon_required: false
+  external_database_required: false
+durable_state:
+  root: .continuum/
+  format: YAML
+  git_tracked: true
+runtime_state:
+  root: .continuum-local/
+  format: SQLite
+  git_tracked: false
+change_states:
+- active
+- closed
+- superseded
+interaction_types:
+- STATUS
+- NOTICE
+- DECISION
+- BLOCK
+host_baseline:
+  codex:
+    lifecycle:
+    - SessionStart
+    - UserPromptSubmit
+    - Stop
+    - SessionEnd
+    ux:
+      default: silent
+      decision: structured-mcp-elicitation-first
+      fallback: hook-gate
+      block: hook-block
+  omp:
+    lifecycle:
+    - session_start
+    - before_agent_start
+    - session_stop
+    - session_shutdown
+    ux:
+      aware: silent
+      managed: single-ambient-widget
+      simple_decision: select
+      heavy_decision: overlay
+technology:
+  language: TypeScript
+  node: 24 LTS
+  runtime_sqlite: better-sqlite3
+archive:
+  final_source_snapshot: default
+  full_git_history: optional --with-history

@@ -1,0 +1,50 @@
+{
+  "version": "0.1",
+  "status": "architecture-gate-draft",
+  "upstream_baseline": "Continuum-前期冻结基准-v1.0.0",
+  "style": {
+    "deployment": "local-first modular monolith",
+    "state": "repo-native durable + worktree-local ephemeral",
+    "integration": "ports and adapters",
+    "authority": "federated",
+    "lifecycle": "state-derived event-assisted"
+  },
+  "modules": [
+    "project",
+    "snapshot",
+    "change",
+    "work",
+    "artifact",
+    "relation",
+    "lifecycle",
+    "reconcile",
+    "context",
+    "interaction",
+    "archive"
+  ],
+  "interaction_types": [
+    "STATUS",
+    "NOTICE",
+    "DECISION",
+    "BLOCK"
+  ],
+  "hosts": {
+    "codex": {
+      "status": "silent",
+      "decision": "mcp-elicitation-first",
+      "fallback": "hook-gate"
+    },
+    "omp": {
+      "managed_status": "single-ambient-widget",
+      "simple_decision": "select",
+      "heavy_decision": "overlay"
+    }
+  },
+  "required_before_spec": [
+    "storage ADR accepted",
+    "change state machine frozen",
+    "interaction schema frozen",
+    "Matt adapter contract frozen",
+    "archive MVP boundary frozen"
+  ]
+}

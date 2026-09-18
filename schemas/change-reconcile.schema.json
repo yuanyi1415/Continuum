@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ContinuumChangeReconcile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "reconcile_id", "project_id", "change_id", "input_snapshot_id", "implementation_revision", "created_at", "implementation_summary", "resolved_work", "unresolved_work", "knowledge_changes", "architecture_decisions", "discovered_work", "result", "block_reasons"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "reconcile_id": {"type": "string", "pattern": "^crec_"},
+    "project_id": {"type": "string", "pattern": "^prj_"},
+    "change_id": {"type": "string", "pattern": "^chg_"},
+    "input_snapshot_id": {"type": "string", "pattern": "^snap_"},
+    "implementation_revision": {"type": "string", "pattern": "^[0-9a-fA-F]{40,64}$"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "implementation_summary": {"type": "string"},
+    "resolved_work": {"type": "array"},
+    "unresolved_work": {"type": "array"},
+    "knowledge_changes": {"type": "array"},
+    "architecture_decisions": {"type": "array"},
+    "discovered_work": {"type": "array", "items": {"type": "string"}},
+    "result": {"enum": ["pass", "blocked"]},
+    "block_reasons": {"type": "array", "items": {"type": "string"}}
+  }
+}
