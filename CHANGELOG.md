@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.2 — 2026-09-18
+
+### Fixed
+
+- Renamed the development `build` scripts to `compile` so npm does not classify the Git repository as requiring Git-dependency build preparation.
+- Kept precompiled `dist/` in the repository.
+- Restored direct installation via `npm install -g "github:yuanyi1415/Continuum"`.
+- Updated CI and development docs to use `npm run compile`.
+
+
 ## 1.0.1
 
 ### Installation
