@@ -26,8 +26,10 @@ export class UserHostDiagnostics implements HostDiagnosticsPort {
     const hooksPath = join(codexHome, "hooks.json");
     const configPath = join(codexHome, "config.toml");
     const hooksPresent = existsSync(hooksPath) && /continuum/i.test(readFileSync(hooksPath, "utf8")) && /host[^\n]*codex[^\n]*hook[^\n]*--global/i.test(readFileSync(hooksPath, "utf8"));
-    const configPresent = existsSync(configPath) && /^\s*hooks\s*=\s*true\s*$/m.test(readFileSync(configPath, "utf8"));
-    const globalPresent = hooksPresent && configPresent;
+    const configText = existsSync(configPath) ? readFileSync(configPath, "utf8") : "";
+    const configPresent = /^\s*hooks\s*=\s*true\s*$/m.test(configText);
+    const mcpPresent = /^\s*\[\s*mcp_servers\.(?:continuum|"continuum"|'continuum')\s*\]\s*$/m.test(configText);
+    const globalPresent = hooksPresent && configPresent && mcpPresent;
     const legacyCodex = Boolean(this.repositoryRoot && existsSync(join(this.repositoryRoot, ".codex", "hooks.json")) && /continuum/i.test(readFileSync(join(this.repositoryRoot, ".codex", "hooks.json"), "utf8")));
     const codexWarn = codex.installed && (!globalPresent || legacyCodex);
     out.push({
@@ -42,7 +44,7 @@ export class UserHostDiagnostics implements HostDiagnosticsPort {
           : legacyCodex
             ? "Codex global bridge is installed; a legacy project-local Continuum hook also exists. Global bridge will defer to it until the project adapter is removed."
             : `Codex ${codex.version ?? ""} global Continuum bridge is installed.`.trim(),
-      details: { codexHome, hooksPath, configPath, legacyProjectAdapter: legacyCodex, version: codex.version, lifecycleHooks: codex.lifecycleHooks, structuredDecision: codex.structuredDecision, diagnostics: codex.diagnostics },
+      details: { codexHome, hooksPath, configPath, mcpPresent, legacyProjectAdapter: legacyCodex, version: codex.version, lifecycleHooks: codex.lifecycleHooks, structuredDecision: codex.structuredDecision, diagnostics: codex.diagnostics },
     });
 
     const omp = await this.detectOmp();

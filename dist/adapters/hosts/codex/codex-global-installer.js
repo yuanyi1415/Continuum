@@ -1,13 +1,6 @@
-import { execFile } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
-import { promisify } from "node:util";
-const execFileAsync = promisify(execFile);
-async function defaultRunner(command, args) {
-    const { stdout, stderr } = await execFileAsync(command, args, { encoding: "utf8" });
-    return { stdout, stderr };
-}
 function shellQuote(value) { return `'${value.replaceAll("'", `'"'"'`)}'`; }
 function hookEntry(command) { return { hooks: [{ type: "command", command, statusMessage: "Continuum" }] }; }
 function enableHooksToml(text) {
@@ -40,12 +33,46 @@ function enableHooksToml(text) {
     lines.splice(features + 1, 0, "hooks = true");
     return { text: lines.join("\n"), changed: true };
 }
+function tomlString(value) {
+    return `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"').replaceAll("\n", "\\n").replaceAll("\r", "\\r")}"`;
+}
+function isContinuumMcpHeader(line) {
+    return /^\s*\[\s*mcp_servers\.(?:continuum|"continuum"|'continuum')(?:\.|\])/.test(line);
+}
+function upsertContinuumMcpToml(text, nodePath, mcpServerPath, cliEntryPath) {
+    const desired = [
+        "[mcp_servers.continuum]",
+        `command = ${tomlString(nodePath)}`,
+        `args = [${tomlString(resolve(mcpServerPath))}, ${tomlString(resolve(cliEntryPath))}]`,
+    ].join("\n");
+    const lines = text.split(/\r?\n/);
+    const kept = [];
+    let removing = false;
+    let found = false;
+    for (const line of lines) {
+        const header = /^\s*\[.*\]\s*$/.test(line);
+        if (!removing && isContinuumMcpHeader(line)) {
+            removing = true;
+            found = true;
+            continue;
+        }
+        if (removing && header) {
+            if (isContinuumMcpHeader(line))
+                continue;
+            removing = false;
+        }
+        if (!removing)
+            kept.push(line);
+    }
+    const base = kept.join("\n").trimEnd();
+    const next = `${base}${base ? "\n\n" : ""}${desired}\n`;
+    const normalizedCurrent = text.trimEnd() + (text.trim() ? "\n" : "");
+    return { text: next, changed: next !== normalizedCurrent || !found };
+}
 export class CodexGlobalInstaller {
-    run;
     home;
     env;
-    constructor(run = defaultRunner, home = homedir, env = process.env) {
-        this.run = run;
+    constructor(home = homedir, env = process.env) {
         this.home = home;
         this.env = env;
     }
@@ -84,27 +111,16 @@ export class CodexGlobalInstaller {
         }
         catch { }
         const enabled = enableHooksToml(config);
-        if (enabled.changed || !config)
-            await writeFile(configPath, enabled.text, "utf8");
-        const warnings = [];
-        let mcp = "skipped";
+        let nextConfig = enabled.text;
+        let mcp = "existing";
         if (registerMcp) {
-            try {
-                try {
-                    await this.run("codex", ["mcp", "get", "continuum"]);
-                    mcp = "existing";
-                }
-                catch {
-                    await this.run("codex", ["mcp", "add", "continuum", "--", process.execPath, resolve(mcpServerPath), resolve(cliEntryPath)]);
-                    mcp = "installed";
-                }
-            }
-            catch (error) {
-                mcp = "unavailable";
-                warnings.push(`Could not register Codex MCP server: ${error instanceof Error ? error.message : String(error)}`);
-            }
+            const updated = upsertContinuumMcpToml(nextConfig, process.execPath, mcpServerPath, cliEntryPath);
+            nextConfig = updated.text;
+            mcp = updated.changed ? "installed" : "existing";
         }
-        return { scope: "user", codexHome, hooksPath, configPath, hookInstalled, hooksEnabled: true, mcp, warnings };
+        if (nextConfig !== config)
+            await writeFile(configPath, nextConfig, "utf8");
+        return { scope: "user", codexHome, hooksPath, configPath, hookInstalled, hooksEnabled: true, mcp, warnings: [] };
     }
 }
 //# sourceMappingURL=codex-global-installer.js.map

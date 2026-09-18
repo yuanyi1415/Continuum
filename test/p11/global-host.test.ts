@@ -29,14 +29,9 @@ test("Codex global installer writes one user-level hook set and global MCP regis
   const root=temp("continuum-p11-codex-global-");
   try{
     const env={CODEX_HOME:join(root,"codex-home")} as NodeJS.ProcessEnv;
-    let mcpExists=false; const calls:string[]=[];
-    const runner=async(command:string,args:string[])=>{
-      calls.push([command,...args].join(" "));
-      if(args[0]==="mcp"&&args[1]==="get") { if(!mcpExists) throw new Error("missing"); return {stdout:"continuum\n",stderr:""}; }
-      if(args[0]==="mcp"&&args[1]==="add") { mcpExists=true; return {stdout:"added\n",stderr:""}; }
-      throw new Error("unexpected command");
-    };
-    const installer=new CodexGlobalInstaller(runner,()=>root,env);
+    mkdirSync(env.CODEX_HOME!,{recursive:true});
+    writeFileSync(join(env.CODEX_HOME!,"config.toml"),'model = "gpt-5.6-sol"\n\n[mcp_servers.other]\ncommand = "other"\n\n[mcp_servers.continuum]\ncommand = "stale"\nargs = ["old"]\n');
+    const installer=new CodexGlobalInstaller(()=>root,env);
     const first=await installer.install("/opt/continuum/dist/cli/index.js","/opt/continuum/runtime-assets/codex-mcp-server.mjs",true);
     const second=await installer.install("/opt/continuum/dist/cli/index.js","/opt/continuum/runtime-assets/codex-mcp-server.mjs",true);
     assert.equal(first.scope,"user"); assert.equal(first.mcp,"installed"); assert.equal(second.mcp,"existing");
@@ -45,8 +40,12 @@ test("Codex global installer writes one user-level hook set and global MCP regis
       const commands=(hooks.hooks[event]??[]).flatMap((group:any)=>group.hooks??[]).map((h:any)=>String(h.command??"")).filter((c:string)=>/continuum/i.test(c));
       assert.equal(commands.length,1); assert.match(commands[0],/host codex hook --global/);
     }
-    assert.match(readFileSync(first.configPath,"utf8"),/^hooks = true$/m);
-    assert.equal(calls.some(call=>/mcp add continuum/.test(call)),true);
+    const config=readFileSync(first.configPath,"utf8");
+    assert.match(config,/^hooks = true$/m);
+    assert.match(config,/^\[mcp_servers\.other\]$/m);
+    assert.match(config,/^\[mcp_servers\.continuum\]$/m);
+    assert.match(config,/codex-mcp-server\.mjs/);
+    assert.doesNotMatch(config,/command = "stale"/);
   }finally{rmSync(root,{recursive:true,force:true});}
 });
 
@@ -68,13 +67,7 @@ test("global host diagnostics pass for user bridges and warn on legacy project a
   try{
     const asset=join(root,"asset.ts"); writeFileSync(asset,'const BRIDGE_SCOPE:"global"|"project"="global";\n');
     const env={CODEX_HOME:join(root,"codex"),PI_CODING_AGENT_DIR:join(root,"omp-agent")} as NodeJS.ProcessEnv;
-    let mcp=false;
-    const runner=async(_command:string,args:string[])=>{
-      if(args[0]==="mcp"&&args[1]==="get"){if(!mcp)throw new Error("missing");return {stdout:"ok",stderr:""};}
-      if(args[0]==="mcp"&&args[1]==="add"){mcp=true;return {stdout:"ok",stderr:""};}
-      throw new Error("unexpected");
-    };
-    await new CodexGlobalInstaller(runner,()=>root,env).install("/cli.js","/mcp.mjs");
+    await new CodexGlobalInstaller(()=>root,env).install("/cli.js","/mcp.mjs");
     await new OmpGlobalInstaller(()=>root,env).install(asset);
     const clean=await new UserHostDiagnostics(asset,undefined,async()=>fakeCodexCaps(),async()=>fakeOmpCaps(),()=>root,env).inspect();
     assert.equal(clean.every(item=>item.level==="PASS"),true);
