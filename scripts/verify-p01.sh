@@ -19,7 +19,7 @@ printf 'git=%s\n' "$(git --version)" | tee -a "$EVIDENCE/environment.txt"
 
 npm install
 npm run test:p01 | tee "$EVIDENCE/tests.txt"
-npm run build
+npm run compile
 
 FIXTURE="$EVIDENCE/fixture"
 SOURCE="$FIXTURE/source"

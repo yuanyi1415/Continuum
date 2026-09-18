@@ -26,7 +26,7 @@ npm run test:p08 | tee "$EVIDENCE/tests-p08.txt"
 npm run test:p07 | tee "$EVIDENCE/tests-p07-regression.txt"
 npm run test:p05 | tee "$EVIDENCE/tests-p05-regression.txt"
 npm run test:p03 | tee "$EVIDENCE/tests-p03-regression.txt"
-npm run build
+npm run compile
 
 SOURCE="$EVIDENCE/source"
 mkdir -p "$SOURCE/docs"

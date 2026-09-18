@@ -29,7 +29,7 @@ npm run test:p04 | tee "$EVIDENCE/tests-p04-regression.txt"
 npm run test:p03 | tee "$EVIDENCE/tests-p03-regression.txt"
 npm run test:p02 | tee "$EVIDENCE/tests-p02-regression.txt"
 npm run test:p01 | tee "$EVIDENCE/tests-p01-regression.txt"
-npm run build
+npm run compile
 node --check runtime-assets/codex-mcp-server.mjs
 
 FIXTURE="$EVIDENCE/fixture"

@@ -1,6 +1,6 @@
 {
   "name": "@continuum-ai/continuum",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Local-first project lifecycle control plane for long-running AI coding projects",
   "type": "module",
   "bin": {
@@ -10,7 +10,7 @@
     "node": ">=24 <25"
   },
   "scripts": {
-    "test": "npm run compile:test && node --test dist-test/test/p01/*.test.js dist-test/test/p02/*.test.js dist-test/test/p03/*.test.js dist-test/test/p04/*.test.js dist-test/test/p05/*.test.js dist-test/test/p06/*.test.js dist-test/test/p07/*.test.js dist-test/test/p08/*.test.js dist-test/test/p09/*.test.js dist-test/test/p10/*.test.js",
+    "test": "npm run compile:test && node --test dist-test/test/p01/*.test.js dist-test/test/p02/*.test.js dist-test/test/p03/*.test.js dist-test/test/p04/*.test.js dist-test/test/p05/*.test.js dist-test/test/p06/*.test.js dist-test/test/p07/*.test.js dist-test/test/p08/*.test.js dist-test/test/p09/*.test.js dist-test/test/p10/*.test.js dist-test/test/p11/*.test.js",
     "test:p01": "npm run compile:test && node --test dist-test/test/p01/*.test.js",
     "check": "npm run test",
     "test:p02": "npm run compile:test && node --test dist-test/test/p02/*.test.js",
@@ -24,7 +24,8 @@
     "test:p10": "npm run compile:test && node --test dist-test/test/p10/*.test.js",
     "prepublishOnly": "npm test && npm run compile",
     "compile": "tsc -p tsconfig.json",
-    "compile:test": "tsc -p tsconfig.test.json"
+    "compile:test": "tsc -p tsconfig.test.json",
+    "test:p11": "npm run compile:test && node --test dist-test/test/p11/*.test.js"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",

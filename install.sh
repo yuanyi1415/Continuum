@@ -24,4 +24,4 @@ npm install -g "$TMP/$PACKAGE"
 
 echo
 continuum --version
-echo "Continuum installed successfully."
+echo "Continuum installed successfully. Run 'continuum setup' once to connect Codex / OMP globally."

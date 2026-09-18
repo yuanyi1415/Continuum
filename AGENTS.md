@@ -4,7 +4,7 @@
 
 Continuum is a local-first project lifecycle control plane for long-running AI coding work.
 
-The MVP v1.0 lifecycle (P01–P10) is complete. Do not reinterpret the product as a chat wrapper, workflow builder, daemon service, or Docker-first platform.
+P01–P10 established the lifecycle MVP. P11 changes the default Host Integration architecture from repo-local adapters to user-level Global Bridges. Do not reinterpret Continuum as a chat wrapper, workflow builder, daemon service, or Docker-first platform.
 
 ## Architecture invariants
 
@@ -15,8 +15,24 @@ The MVP v1.0 lifecycle (P01–P10) is complete. Do not reinterpret the product a
 - Host SDK, Git CLI, filesystem, YAML and SQLite must not leak into Domain.
 - Durable project state lives under `.continuum/` in user projects.
 - Runtime state lives under `.continuum-local/` and is rebuildable.
+- Host integration is user/machine scope by default.
+- Project activation remains project-scoped and opt-in via `.continuum/project.yaml`.
 - Critical lifecycle correctness must not depend solely on LLM initiative.
+- Agent-facing Continuum tools are convenience surfaces; Global Bridges are correctness mechanisms.
 - Live Project uses federated authority; Archive is self-contained materialization.
+
+## Global Host Integration
+
+Normal machine setup:
+
+```bash
+continuum setup
+continuum doctor --global
+```
+
+New projects must not receive repo-local `.codex` / `.omp` adapters by default.
+
+Legacy project adapter compatibility is allowed only to avoid breaking existing projects. Global Bridges must defer when a legacy local adapter is detected.
 
 ## Change control
 
@@ -26,7 +42,8 @@ Stop and raise an architecture gap before introducing:
 - a change in Project / Change / Work / Snapshot authority;
 - an LLM-dependent correctness requirement;
 - a new Host Interaction semantic that bypasses Core;
-- automatic repair of ambiguous Durable Authority.
+- automatic repair of ambiguous Durable Authority;
+- automatic activation of repositories that have not opted into Continuum.
 
 ## Development
 
@@ -35,11 +52,13 @@ Required runtime: Node.js 24 LTS.
 ```bash
 npm install
 npm test
-npm run build
+npm run compile
 ```
 
-All P01–P10 regressions must remain green.
+All P01–P11 regressions must remain green.
 
-## Installing Continuum into another project
+## Installing / enabling Continuum
 
-Read `docs/Agent自助安装.md`. Do not manually recreate `.continuum/`, Codex hooks or OMP extensions when the CLI installer exists.
+Read `docs/Agent自助安装.md`.
+
+Do not manually create Host hooks/extensions when `continuum setup` exists. Do not repeat Host setup per project.

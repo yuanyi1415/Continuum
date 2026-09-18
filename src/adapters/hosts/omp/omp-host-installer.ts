@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile, copyFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 export interface OmpInstallResult {
@@ -29,12 +29,14 @@ export class OmpHostInstaller {
   async install(repositoryRoot:string,extensionAssetPath:string):Promise<OmpInstallResult>{
     const extensionPath=join(repositoryRoot,".omp","extensions","continuum.ts");
     await mkdir(dirname(extensionPath),{recursive:true});
+    const asset=await readFile(extensionAssetPath,"utf8");
+    const projectAsset=asset.replace('const BRIDGE_SCOPE:"global"|"project"="global";','const BRIDGE_SCOPE:"global"|"project"="project";');
     let extensionInstalled=true;
     try {
-      const [existing,asset]=await Promise.all([readFile(extensionPath,"utf8"),readFile(extensionAssetPath,"utf8")]);
-      if(existing===asset) extensionInstalled=false;
+      const existing=await readFile(extensionPath,"utf8");
+      if(existing===projectAsset) extensionInstalled=false;
     } catch {}
-    if(extensionInstalled) await copyFile(extensionAssetPath,extensionPath);
+    if(extensionInstalled) await writeFile(extensionPath,projectAsset,"utf8");
 
     const instructionsPath=join(repositoryRoot,"AGENTS.md");
     let agents=""; try{agents=await readFile(instructionsPath,"utf8");}catch{}

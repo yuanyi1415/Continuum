@@ -1,5 +1,7 @@
 import { spawnSync } from "node:child_process";
-import { appendFileSync } from "node:fs";
+import { appendFileSync, existsSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Component } from "@oh-my-pi/pi-tui";
 import { SelectList, replaceTabs, truncateToWidth } from "@oh-my-pi/pi-tui";
 import type { ExtensionAPI } from "@oh-my-pi/pi-coding-agent";
@@ -10,8 +12,29 @@ type InteractionRequest={id:string;type:"STATUS"|"NOTICE"|"DECISION"|"BLOCK";tit
 type HostResult={state:"SILENT"|"MANAGED"|"DECISION"|"DECISION_MCP"|"BLOCKED";targetArtifactId?:string;contextSummary?:string;interaction?:InteractionRequest;decisionResolved?:{interactionId:string;optionId:string};blockTransition?:{interactionId:string;action:"returned_to_design"|"resolved"};checkpoint?:unknown};
 type JsonEnvelope<T>={ok:boolean;data:T;warnings?:string[];error?:{code:string;message:string}};
 
+const BRIDGE_SCOPE:"global"|"project"="global";
+const EXTENSION_FILE=resolve(fileURLToPath(import.meta.url));
 const WIDGET_KEY="continuum-managed-work";
 const UI_WAIT_TIMEOUT_MS=25_000;
+
+
+function findContinuumRoot(start:string):string|undefined{
+  let current=resolve(start);
+  while(true){
+    if(existsSync(join(current,".continuum","project.yaml"))) return current;
+    const parent=dirname(current);
+    if(parent===current) return undefined;
+    current=parent;
+  }
+}
+
+function shouldHandleLifecycle(ctx:any):boolean{
+  const root=findContinuumRoot(ctx.cwd);
+  if(!root) return false;
+  if(BRIDGE_SCOPE==="project") return true;
+  const legacy=resolve(join(root,".omp","extensions","continuum.ts"));
+  return !existsSync(legacy) || legacy===EXTENSION_FILE;
+}
 
 function invocation(args:string[]){
   const cliBin=process.env.CONTINUUM_CLI_BIN?.trim();
@@ -163,7 +186,7 @@ function traceUiAction(ctx:any,request:InteractionRequest,action:string,error?:u
 function callEvent(ctx:any,eventName:string,prompt?:string):HostResult{
   const payload=eventPayload(eventName,ctx,prompt);
   try{
-    const result=runContinuum<HostResult>(ctx.cwd,["host","omp","event"],payload);
+    const result=runContinuum<HostResult>(ctx.cwd,["host","omp","event",...(BRIDGE_SCOPE==="global"?["--global"]:[])],payload);
     traceEvent(payload,result);
     return result;
   }catch(error){
@@ -236,6 +259,7 @@ export default function continuumExtension(pi:ExtensionAPI):void{
   let resumeContext:string|undefined;
 
   pi.on("session_start",async(_event,ctx)=>{
+    if(!shouldHandleLifecycle(ctx)) return;
     try{
       const result=callEvent(ctx,"session_start");
       const rendered=await renderLifecycleResult(ctx,result);
@@ -248,6 +272,7 @@ export default function continuumExtension(pi:ExtensionAPI):void{
   });
 
   pi.on("before_agent_start",async(event:any,ctx:any)=>{
+    if(!shouldHandleLifecycle(ctx)) return;
     try{
       const result=callEvent(ctx,"before_agent_start",String(event.prompt??""));
       const rendered=await renderLifecycleResult(ctx,result);
@@ -262,6 +287,7 @@ export default function continuumExtension(pi:ExtensionAPI):void{
   });
 
   pi.on("session_stop",async(_event:any,ctx:any)=>{
+    if(!shouldHandleLifecycle(ctx)) return;
     try{
       const result=callEvent(ctx,"session_stop");
       if(result.state==="BLOCKED"&&result.interaction){
@@ -275,8 +301,45 @@ export default function continuumExtension(pi:ExtensionAPI):void{
   });
 
   pi.on("session_shutdown",async(_event,ctx)=>{
+    if(!shouldHandleLifecycle(ctx)){widget(ctx,undefined);return;}
     try{callEvent(ctx,"session_shutdown");}catch{}
     widget(ctx,undefined);
+  });
+
+  const z=pi.zod;
+
+  pi.registerTool({
+    name:"continuum_init",
+    label:"Enable Continuum",
+    description:"Enable Continuum for the current Git project. Use only when the user explicitly asks to enable/init Continuum for this project.",
+    parameters:z.object({name:z.string().optional().describe("Optional project name")}),
+    async execute(_id:any,params:any,_signal:any,_onUpdate:any,ctx:any){
+      const args=["init",...(params?.name?["--name",String(params.name)]:[])];
+      const data=runContinuum<any>(ctx.cwd,args);
+      return {content:[{type:"text",text:`Continuum enabled for ${data.name??"current project"}.`}],details:data};
+    },
+  });
+
+  pi.registerTool({
+    name:"continuum_status",
+    label:"Continuum Status",
+    description:"Read deterministic Continuum project/work status for the current project.",
+    parameters:z.object({}),
+    async execute(_id:any,_params:any,_signal:any,_onUpdate:any,ctx:any){
+      const data=runContinuum<any>(ctx.cwd,["status"]);
+      return {content:[{type:"text",text:JSON.stringify(data,null,2)}],details:data};
+    },
+  });
+
+  pi.registerTool({
+    name:"continuum_doctor",
+    label:"Continuum Doctor",
+    description:"Run deterministic Continuum diagnostics for the current project. Use when the user asks to check or repair Continuum state.",
+    parameters:z.object({recover:z.boolean().optional()}),
+    async execute(_id:any,params:any,_signal:any,_onUpdate:any,ctx:any){
+      const data=runContinuum<any>(ctx.cwd,["doctor",...(params?.recover?["--recover"]:[])]);
+      return {content:[{type:"text",text:JSON.stringify(data,null,2)}],details:data};
+    },
   });
 
   pi.registerCommand("continuum-status",{

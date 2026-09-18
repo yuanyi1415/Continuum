@@ -25,7 +25,7 @@ command -v git >/dev/null || fail "git not found"
 command -v tar >/dev/null || fail "tar not found"
 if [ ! -f "$CLI" ]; then
   echo "Building Continuum P10..."
-  (cd "$ROOT" && npm install && npm run build)
+  (cd "$ROOT" && npm install && npm run compile)
 fi
 
 rm -rf "$EVIDENCE"; mkdir -p "$REPO"

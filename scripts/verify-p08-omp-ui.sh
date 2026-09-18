@@ -6,7 +6,7 @@ SOURCE="$EVIDENCE/source"
 
 if [ ! -f "$ROOT/dist/cli/index.js" ]; then
   echo "Building the current P08 package for interactive verification..."
-  (cd "$ROOT" && npm install && npm run build)
+  (cd "$ROOT" && npm install && npm run compile)
 fi
 [ -d "$SOURCE/.continuum" ] || { echo "Run ./scripts/verify-p08.sh first." >&2; exit 2; }
 command -v omp >/dev/null 2>&1 || { echo "omp not found" >&2; exit 2; }

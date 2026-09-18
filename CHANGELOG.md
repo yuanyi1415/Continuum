@@ -1,28 +1,43 @@
 # Changelog
 
+## 1.1.0 — 2026-09-18
+
+### Changed
+
+- Host integration moved from repo-local installation to user-level Global Bridges.
+- Added `continuum setup` for one-time Codex / OMP machine setup.
+- Added `continuum doctor --global`.
+- `continuum host install codex|omp` now installs globally by default; `--project` is legacy compatibility mode.
+- Global Bridges discover `.continuum/project.yaml` from Host cwd and stay silent outside opt-in projects.
+
+### Added
+
+- Codex user-level Hook + Continuum MCP installation.
+- OMP user-level Continuum Extension installation.
+- Agent-facing `continuum_init`, `continuum_status`, `continuum_doctor` tools.
+- Legacy repo-local Adapter deferral to prevent duplicate lifecycle processing.
+- P11 production verification journey.
+
+### Validation
+
+- P11: 6 / 6 tests PASS.
+- P01–P11: 74 / 74 regression tests PASS.
+
 ## 1.0.2 — 2026-09-18
 
 ### Fixed
 
-- Renamed the development `build` scripts to `compile` so npm does not classify the Git repository as requiring Git-dependency build preparation.
+- Renamed development `build` scripts to `compile` so npm Git installation does not trigger Git-dependency build preparation.
 - Kept precompiled `dist/` in the repository.
-- Restored direct installation via `npm install -g "github:yuanyi1415/Continuum"`.
-- Updated CI and development docs to use `npm run compile`.
+- Restored direct GitHub npm installation.
 
-
-## 1.0.1
-
-### Installation
-
-- Added a Git dependency-safe installer (`install.sh`).
-- Recommended installation now uses `git clone → npm pack → npm install -g local.tgz` instead of `npm install -g git+...`, avoiding an upstream npm global Git dependency preparation failure. — 2026-09-18
+## 1.0.1 — 2026-09-18
 
 ### Fixed
 
 - GitHub global install no longer compiles TypeScript on the user machine.
 - Prebuilt `dist/` is committed and shipped with the repository.
 - Removed the install-time `prepare` build hook that caused `tsc: command not found`.
-
 
 ## 1.0.0 — 2026-09-18
 

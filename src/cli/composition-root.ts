@@ -7,7 +7,7 @@ import { LocalMattArtifactObserver } from "../adapters/matt/local-matt-artifact-
 import { SqliteRuntimeStore } from "../adapters/storage/sqlite-runtime-store/sqlite-runtime-store.js";
 import { YamlProjectStore } from "../adapters/storage/yaml-project-store/yaml-project-store.js";
 import { YamlProjectMaintenance } from "../adapters/storage/yaml-project-store/yaml-project-maintenance.js";
-import { RepositoryHostDiagnostics } from "../adapters/hosts/repository-host-diagnostics.js";
+import { UserHostDiagnostics } from "../adapters/hosts/user-host-diagnostics.js";
 import { LocalProjectArchive } from "../adapters/archive/local-project-archive.js";
 import { ListArtifacts } from "../application/artifact/list-artifacts.js";
 import { RegisterArtifact } from "../application/artifact/register-artifact.js";
@@ -48,7 +48,7 @@ export function createApp() {
   const durableMaintenance=(root:string)=>new YamlProjectMaintenance(root,()=>clock.nowIso());
   const authorities=(root:string)=>new LocalGitArtifactAuthority(root);
   const packageRoot=resolve(dirname(fileURLToPath(import.meta.url)),"../..");
-  const hostDiagnostics=(root:string)=>new RepositoryHostDiagnostics(root,join(packageRoot,"runtime-assets","omp-extension.ts"));
+  const hostDiagnostics=(root:string)=>new UserHostDiagnostics(join(packageRoot,"runtime-assets","omp-extension.ts"),root);
   const observers=(root:string)=>new LocalMattArtifactObserver(root);
   const registerArtifact=new RegisterArtifact(git,stores,authorities,ids);
   const registerRelation=new RegisterRelation(git,stores,clock,ids);

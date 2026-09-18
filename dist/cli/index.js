@@ -5,9 +5,14 @@ import { ContinuumError } from "../shared/errors/continuum-error.js";
 import { decodeCodexHook, encodeCodexHook } from "../adapters/hosts/codex/codex-hook-protocol.js";
 import { CodexCapabilityDetector } from "../adapters/hosts/codex/codex-capability-detector.js";
 import { CodexHostInstaller } from "../adapters/hosts/codex/codex-host-installer.js";
+import { CodexGlobalInstaller } from "../adapters/hosts/codex/codex-global-installer.js";
 import { decodeOmpEvent, encodeOmpEvent } from "../adapters/hosts/omp/omp-extension-protocol.js";
 import { OmpCapabilityDetector } from "../adapters/hosts/omp/omp-capability-detector.js";
 import { OmpHostInstaller } from "../adapters/hosts/omp/omp-host-installer.js";
+import { OmpGlobalInstaller } from "../adapters/hosts/omp/omp-global-installer.js";
+import { UserHostDiagnostics } from "../adapters/hosts/user-host-diagnostics.js";
+import { findContinuumProjectRoot, hasLegacyCodexProjectAdapter, hasLegacyOmpProjectAdapter } from "../adapters/project/continuum-project-locator.js";
+import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 function flag(args, name) {
@@ -17,6 +22,16 @@ function flag(args, name) {
 function has(args, name) { return args.includes(name); }
 function requireArg(value, message) { if (!value)
     throw new Error(message); return value; }
+function runtimePaths() {
+    const cliEntry = resolve(fileURLToPath(import.meta.url));
+    let packageRoot = resolve(dirname(cliEntry), "../..");
+    if (!existsSync(join(packageRoot, "runtime-assets"))) {
+        const testRoot = resolve(packageRoot, "..");
+        if (existsSync(join(testRoot, "runtime-assets")))
+            packageRoot = testRoot;
+    }
+    return { cliEntry, packageRoot, ompExtension: join(packageRoot, "runtime-assets", "omp-extension.ts"), codexMcp: join(packageRoot, "runtime-assets", "codex-mcp-server.mjs") };
+}
 async function readStdin() {
     const chunks = [];
     for await (const chunk of process.stdin)
@@ -28,15 +43,16 @@ const relationTypes = new Set(["belongs_to", "blocked_by", "governed_by", "domai
 const relationRouting = new Set(["required", "optional", "historical"]);
 const changeStatuses = new Set(["active", "closed", "superseded"]);
 function version() {
-    return "Continuum 1.0.2";
+    return "Continuum 1.1.0";
 }
 function help() {
     return `Continuum
 
 Usage:
+  continuum setup [--skip-codex] [--skip-omp] [--json]
   continuum init [--name NAME] [--json]
   continuum status [--json]
-  continuum doctor [--recover] [--json]
+  continuum doctor [--recover] [--global] [--json]
   continuum migrate [--json]
   continuum archive [--allow-incomplete] [--with-history] [--json]
   continuum archive verify <archive-path> [--json]
@@ -65,15 +81,15 @@ Usage:
   continuum lifecycle checkpoint [--source SOURCE] [--session ID --host HOST] [--json]
   continuum lifecycle install-git-hook [--command COMMAND] [--json]
 
-  continuum host install codex [--skip-mcp] [--json]
-  continuum host install omp [--json]
+  continuum host install codex [--skip-mcp] [--project] [--json]
+  continuum host install omp [--project] [--json]
   continuum host doctor [--json]
   continuum host codex capabilities [--json]
-  continuum host codex hook
+  continuum host codex hook [--global]
   continuum host codex interaction next [--type DECISION|BLOCK] [--json]
   continuum host codex interaction resolve <id> [--option OPTION] [--action accept|cancel|dismiss|unavailable|resolve] [--json]
   continuum host omp capabilities [--json]
-  continuum host omp event
+  continuum host omp event [--global]
   continuum host omp interaction next [--type DECISION|BLOCK] [--json]
   continuum host omp interaction resolve <id> [--option OPTION] [--action accept|cancel|dismiss|unavailable|resolve] [--json]`;
 }
@@ -89,6 +105,49 @@ async function main() {
     }
     if (command === "--version" || command === "-v" || command === "version") {
         console.log(version());
+        return;
+    }
+    if (command === "setup") {
+        const paths = runtimePaths();
+        const data = { scope: "user", hosts: {} };
+        const warnings = [];
+        if (!has(args, "--skip-codex")) {
+            const capabilities = await new CodexCapabilityDetector().detect();
+            if (capabilities.installed) {
+                const result = await new CodexGlobalInstaller().install(paths.cliEntry, paths.codexMcp, true);
+                data.hosts.codex = { status: "installed", ...result, capabilities };
+                warnings.push(...result.warnings);
+            }
+            else {
+                data.hosts.codex = { status: "not-installed", capabilities };
+                warnings.push("Codex executable was not found; Codex global bridge was skipped.");
+            }
+        }
+        if (!has(args, "--skip-omp")) {
+            const capabilities = await new OmpCapabilityDetector().detect();
+            if (capabilities.installed) {
+                const result = await new OmpGlobalInstaller().install(paths.ompExtension);
+                data.hosts.omp = { status: "installed", ...result, capabilities };
+                warnings.push(...result.warnings);
+            }
+            else {
+                data.hosts.omp = { status: "not-installed", capabilities };
+                warnings.push("OMP executable was not found; OMP global bridge was skipped.");
+            }
+        }
+        if (json)
+            printJson({ ok: true, data, warnings, interaction: null });
+        else {
+            const codex = data.hosts.codex;
+            if (codex)
+                console.log(`Codex: ${codex.status}${codex.hooksPath ? ` · ${codex.hooksPath}` : ""}`);
+            const omp = data.hosts.omp;
+            if (omp)
+                console.log(`OMP: ${omp.status}${omp.extensionPath ? ` · ${omp.extensionPath}` : ""}`);
+            for (const warning of warnings)
+                console.log(`WARN ${warning}`);
+            console.log("Continuum global host setup complete. Projects remain opt-in via continuum init.");
+        }
         return;
     }
     if (command === "init") {
@@ -112,6 +171,17 @@ async function main() {
         return;
     }
     if (command === "doctor") {
+        if (has(args, "--global")) {
+            const paths = runtimePaths();
+            const result = await new UserHostDiagnostics(paths.ompExtension).inspect();
+            const warnings = result.filter(item => item.level === "WARN").map(item => item.message);
+            if (json)
+                printJson({ ok: !result.some(item => item.level === "FAIL"), data: { scope: "user", hosts: result }, warnings, interaction: null });
+            else
+                for (const item of result)
+                    console.log(`${item.level.padEnd(4)} ${item.host}: ${item.message}`);
+            return;
+        }
         const result = await app.doctor.execute(cwd, { recover: has(args, "--recover") });
         if (json)
             printJson({ ok: result.ok, data: result, warnings: result.checks.filter(c => c.level === "WARN").map(c => c.message), interaction: null });
@@ -400,19 +470,20 @@ async function main() {
         const hostAction = args[1];
         if (hostAction === "install") {
             const hostName = requireArg(args[2], "Usage: continuum host install <codex|omp>");
-            const cliEntry = resolve(fileURLToPath(import.meta.url));
-            const packageRoot = resolve(dirname(cliEntry), "../..");
+            const paths = runtimePaths();
+            const projectMode = has(args, "--project");
             if (hostName === "codex") {
                 const capabilities = await new CodexCapabilityDetector().detect();
                 if (!capabilities.installed)
                     throw new ContinuumError("CONTINUUM_HOST_UNAVAILABLE", "Codex executable was not found.", true, { capabilities });
-                const mcpServer = join(packageRoot, "runtime-assets", "codex-mcp-server.mjs");
-                const result = await new CodexHostInstaller().install(cwd, cliEntry, mcpServer, !has(args, "--skip-mcp"));
-                const data = { ...result, capabilities };
+                const result = projectMode
+                    ? await new CodexHostInstaller().install(cwd, paths.cliEntry, paths.codexMcp, !has(args, "--skip-mcp"))
+                    : await new CodexGlobalInstaller().install(paths.cliEntry, paths.codexMcp, !has(args, "--skip-mcp"));
+                const data = { ...result, capabilities, mode: projectMode ? "project-compat" : "global" };
                 if (json)
                     printJson({ ok: true, data, warnings: result.warnings, interaction: null });
                 else {
-                    console.log(`Codex hooks: ${result.hooksPath}`);
+                    console.log(`Codex ${projectMode ? "project compatibility adapter" : "global bridge"}: ${result.hooksPath}`);
                     console.log(`Codex MCP: ${result.mcp}`);
                     for (const warning of result.warnings)
                         console.log(`WARN ${warning}`);
@@ -423,13 +494,14 @@ async function main() {
                 const capabilities = await new OmpCapabilityDetector().detect();
                 if (!capabilities.installed)
                     throw new ContinuumError("CONTINUUM_HOST_UNAVAILABLE", "OMP executable was not found.", true, { capabilities });
-                const extensionAsset = join(packageRoot, "runtime-assets", "omp-extension.ts");
-                const result = await new OmpHostInstaller().install(cwd, extensionAsset);
-                const data = { ...result, capabilities };
+                const result = projectMode
+                    ? await new OmpHostInstaller().install(cwd, paths.ompExtension)
+                    : await new OmpGlobalInstaller().install(paths.ompExtension);
+                const data = { ...result, capabilities, mode: projectMode ? "project-compat" : "global" };
                 if (json)
                     printJson({ ok: true, data, warnings: result.warnings, interaction: null });
                 else {
-                    console.log(`OMP extension: ${result.extensionPath}`);
+                    console.log(`OMP ${projectMode ? "project compatibility adapter" : "global bridge"}: ${result.extensionPath}`);
                     for (const warning of result.warnings)
                         console.log(`WARN ${warning}`);
                 }
@@ -438,7 +510,9 @@ async function main() {
             throw new Error(`Unsupported host: ${hostName}`);
         }
         if (hostAction === "doctor") {
-            const result = await app.hostDoctor.execute(cwd);
+            const paths = runtimePaths();
+            const projectRoot = findContinuumProjectRoot(cwd) ?? undefined;
+            const result = await new UserHostDiagnostics(paths.ompExtension, projectRoot).inspect();
             const warnings = result.filter(item => item.level === "WARN").map(item => item.message);
             if (json)
                 printJson({ ok: !result.some(item => item.level === "FAIL"), data: result, warnings, interaction: null });
@@ -460,6 +534,14 @@ async function main() {
             if (action === "hook") {
                 const raw = await readStdin();
                 const payload = (raw.trim() ? JSON.parse(raw) : {});
+                if (has(args, "--global")) {
+                    const projectRoot = findContinuumProjectRoot(String(payload.cwd ?? cwd));
+                    if (!projectRoot || hasLegacyCodexProjectAdapter(projectRoot)) {
+                        process.stdout.write(JSON.stringify({ continue: true, suppressOutput: true }));
+                        return;
+                    }
+                    payload.cwd = projectRoot;
+                }
                 const signal = decodeCodexHook(payload, cwd);
                 if (!signal) {
                     process.stdout.write(JSON.stringify({ continue: true, suppressOutput: true }));
@@ -524,6 +606,17 @@ async function main() {
             if (action === "event") {
                 const raw = await readStdin();
                 const payload = (raw.trim() ? JSON.parse(raw) : {});
+                if (has(args, "--global")) {
+                    const projectRoot = findContinuumProjectRoot(String(payload.cwd ?? cwd));
+                    if (!projectRoot || hasLegacyOmpProjectAdapter(projectRoot)) {
+                        if (json)
+                            printJson({ ok: true, data: { state: "SILENT" }, warnings: [], interaction: null });
+                        else
+                            process.stdout.write(JSON.stringify({ state: "SILENT" }));
+                        return;
+                    }
+                    payload.cwd = projectRoot;
+                }
                 const signal = decodeOmpEvent(payload, cwd);
                 if (!signal) {
                     if (json)

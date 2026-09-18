@@ -39,7 +39,40 @@ function schemaFor(request) {
 }
 
 function buildServer(reqCtx) {
-  const server = new McpServer({ name: 'continuum', version: '0.7.0' });
+  const server = new McpServer({ name: 'continuum', version: '1.1.0' });
+
+  server.registerTool(
+    'continuum_init',
+    {
+      description: 'Enable Continuum for the current Git project. Use only when the user explicitly asks to enable/init Continuum for this project.',
+    },
+    async () => {
+      const data = runCli(['init']);
+      return { content: [{ type: 'text', text: `Continuum enabled for ${data.name || 'current project'}.` }] };
+    },
+  );
+
+  server.registerTool(
+    'continuum_status',
+    {
+      description: 'Read deterministic Continuum project/work status for the current project.',
+    },
+    async () => {
+      const data = runCli(['status']);
+      return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+    },
+  );
+
+  server.registerTool(
+    'continuum_doctor',
+    {
+      description: 'Run deterministic Continuum diagnostics for the current project.',
+    },
+    async () => {
+      const data = runCli(['doctor']);
+      return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+    },
+  );
 
   server.registerTool(
     'continuum_decision',
