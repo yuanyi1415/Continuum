@@ -28,7 +28,7 @@ const relationTypes = new Set(["belongs_to", "blocked_by", "governed_by", "domai
 const relationRouting = new Set(["required", "optional", "historical"]);
 const changeStatuses = new Set(["active", "closed", "superseded"]);
 function version() {
-    return "Continuum 1.0.1";
+    return "Continuum 1.0.2";
 }
 function help() {
     return `Continuum
